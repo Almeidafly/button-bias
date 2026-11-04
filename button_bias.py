@@ -129,9 +129,15 @@ def _is_flat_label(obj):
                     ("press_axis", "depth_range", "force_range", "feedback", "expected")))
 
 
+def _is_knob(obj):
+    # A knob turns; it has no straight-line press axis.
+    return _kind(obj) in {"knob", "dial", "rotary knob"}
+
+
 # name -> (match rule, reason)
 KNOWN_NON_BUTTONS = {
     "flat_label": (_is_flat_label, "flat printed label: has position and size but no press axis, travel, force, feedback or result"),
+    "knob": (_is_knob, "knob: turns around an axis instead of pressing along one"),
 }
 
 

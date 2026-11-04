@@ -54,3 +54,8 @@ def test_flat_label_is_known_non_button():
 
 def test_real_buttons_classified_button():
     assert all(classify(b)[0] == "button" for b in demo.scene[:3])
+
+
+def test_knob_is_known_non_button():
+    for k in ["knob", "Knob ", {"kind": "dial"}]:
+        assert classify(k)[0] == "known_non_button"
