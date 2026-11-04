@@ -41,19 +41,32 @@ A **dark** press is now diagnosed from (simulated) sensor readings of travel and
 
 The demo now prints `UNKNOWNS: 0`.
 
+## Eject what it doesn't know (v0.4.0)
+Anything that is not a button, not a known non-button and not a known defect is **unknown**. The robot **ejects** it: it takes it out of the working scene and puts it in an eject bin, noting where it was (scene slot and position). It never presses or touches an unknown in any other way. Ejection is simulated and logged.
+
+Every ejection pushes one issue (labels `unknown` + `ejected`) saying what was ejected, which Button fields failed, and where it went. Rules:
+- **Only in Almeidafly/button-bias.** Other repos are refused in code.
+- **Dry-run by default.** Real issues need `--open-issues`.
+- **No duplicates.** The fingerprint is the object's kind + its failed fields. Position, scene and time are left out, so moving a toggle switch is not a new unknown. Before opening, it checks the committed ledger `unknowns/opened.json`, every issue (open **and** closed), and GitHub search. A closed match is skipped and logged `seen before (closed #N)`; it is not reopened or commented on.
+- **Cap.** At most 5 new issues per run (`--max-new N`). The rest stay as files in `unknowns/`.
+
+The demo has two new unknowns, a toggle switch and a touch pad (no travel range, no click). Both are ejected and each got one issue: #7, #8.
+
 ## Run
 ```
 pip install numpy pytest
 python demo.py                 # dry-run, writes unknowns/
 python demo.py --open-issues   # real issues in Almeidafly/button-bias
+python demo.py --open-issues --max-new 2
 pytest -q
 ```
 
 ## Honest caveats
 - The "world" is a dict; "pressing" is a function we wrote. Real perception would need to fill these fields from sensors, which is the hard part and is not here.
 - Rollback restores our state; a real press cannot be undone.
-- Dedupe uses the issue list plus a local note. On a fresh machine with no note, an issue opened seconds earlier may be missed and duplicated (this happened once: #6 duplicates #5).
-- Closed issues are not counted, so a closed unknown that shows up again gets a new issue.
+- Dedupe uses the committed ledger, the issue list and search. If two machines run at the same moment before either pushes its ledger, a duplicate is still possible (happened once in v0.2.0: #6 duplicated #5).
+- Two different unknown things with the same kind name and the same failed fields share one fingerprint, so only the first gets an issue.
+- v0.4.0 fingerprints (`bb2-`) differ from v0.2.0 (`bb-`); old issues #1-#6 are all closed and their objects are now known, so this doesn't matter today.
 - Knob and slider are recognised by their kind/name, not by shape. A knob called something else is still unknown.
 - Sensor readings are made up by the demo; real travel/force sensing is not here.
 - Candidate moves are hand-made, not planned. Thresholds (5 mm lateral) are guesses.

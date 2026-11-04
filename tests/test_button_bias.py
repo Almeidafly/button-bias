@@ -24,7 +24,7 @@ def test_near_misses_rejected(field, val):
 def test_scene_filter():
     btns, ign = perceive(demo.scene)
     assert [b.name for b in btns] == ["power", "menu", "stuck"]
-    assert len(ign) == 4
+    assert len(ign) == 6
 
 def test_bias_zero_for_non_buttons_and_bad_moves():
     m = Move(GOOD.position, demo.DOWN, 0.002, 3.0)
@@ -87,8 +87,8 @@ def test_diagnosis_causes():
     assert _d({"travel": 0.002, "force": 3.0}, after={"screen": "b"}) == "wrong result"
     assert _d({}) == "unexplained"
 
-def test_demo_has_zero_unknowns(tmp_path, capsys):
+def test_original_demo_objects_have_zero_unknowns(tmp_path, capsys):
     fake = type("F", (), {"repo": "Almeidafly/button-bias"})()
-    demo.run(out_dir=str(tmp_path), client=fake)
+    demo.run(out_dir=str(tmp_path), client=fake, scene=demo.scene[:7])
     out = capsys.readouterr().out
     assert "UNKNOWNS: 0" in out and "stuck / no travel" in out and "[unknown]" not in out

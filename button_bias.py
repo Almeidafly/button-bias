@@ -195,3 +195,18 @@ def diagnose(button, move, readings, before, after):
     if not changed:
         return "travel but no result"
     return "wrong result"
+
+
+# ---- v0.4.0: eject what it does not know ----
+
+def eject(scene, obj, bin_, log, from_index=None):
+    """Simulated ejection: take an unknown object out of the working scene into the eject bin.
+    The object is never pressed or touched in any other way. Returns the bin record."""
+    idx = next(i for i, o in enumerate(scene) if o is obj)
+    where = getattr(obj, "position", None) if not isinstance(obj, dict) else obj.get("position")
+    scene.pop(idx)
+    rec = {"object": obj, "name": str(getattr(obj, "name", None) or (obj.get("name") if isinstance(obj, dict) else obj)),
+           "from_index": idx if from_index is None else from_index, "from_position": where, "bin_slot": len(bin_)}
+    bin_.append(rec)
+    log.append(f"EJECTED {rec['name']!r} from slot {rec['from_index']} (position {where}) -> eject bin slot {rec['bin_slot']}")
+    return rec
