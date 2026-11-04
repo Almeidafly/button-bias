@@ -134,10 +134,16 @@ def _is_knob(obj):
     return _kind(obj) in {"knob", "dial", "rotary knob"}
 
 
+def _is_slider(obj):
+    # A slider moves sideways along a track; its position does not matter.
+    return _kind(obj) in {"slider", "fader"}
+
+
 # name -> (match rule, reason)
 KNOWN_NON_BUTTONS = {
     "flat_label": (_is_flat_label, "flat printed label: has position and size but no press axis, travel, force, feedback or result"),
     "knob": (_is_knob, "knob: turns around an axis instead of pressing along one"),
+    "slider": (_is_slider, "slider: slides along a track instead of pressing in"),
 }
 
 

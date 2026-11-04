@@ -59,3 +59,8 @@ def test_real_buttons_classified_button():
 def test_knob_is_known_non_button():
     for k in ["knob", "Knob ", {"kind": "dial"}]:
         assert classify(k)[0] == "known_non_button"
+
+
+def test_slider_is_known_non_button_wherever_it_is():
+    for x in [0.0, 0.4, 9.9]:
+        assert classify({"name": "slider", "position": (x, 0, 0)})[0] == "known_non_button"
