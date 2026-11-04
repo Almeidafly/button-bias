@@ -20,7 +20,13 @@ def actuate(world, b, m):
     if effects.get(b.name):
         world["screen"] = effects[b.name]
 
-if __name__ == "__main__":
+SCENE = "demo-panel-v1"
+
+
+def run(open_issues=False, client=None, out_dir="unknowns"):
+    from button_bias import why_not_button
+    from unknowns import report_ignored, report_dark, file_reports
+    reports = [report_ignored(o, SCENE) for o in scene if why_not_button(o)]
     buttons, ignored = perceive(scene)
     print("IGNORED:")
     for n, why in ignored:
@@ -28,5 +34,19 @@ if __name__ == "__main__":
     cands = [Move(b.position, DOWN, 0.002, 3.0) for b in buttons] + [Move((0.2, 0, 0), DOWN, 0.002, 3.0)]
     world = {"screen": "off"}
     for score, b, m in choose(buttons, cands):
-        r = press(world, b, m, actuate)
+        before = dict(world)
+        after = {}
+        def act(w, b_, m_):
+            actuate(w, b_, m_); after.update(w)
+        r = press(world, b, m, act)
+        if r == "dark":
+            reports.append(report_dark(b, before, after, SCENE))
         print(f"PRESS {b.name:6s} score={score:.2f} -> {r.upper()}  world={world}")
+    print("UNKNOWNS:")
+    for fp, action, where in file_reports(reports, open_issues, client, out_dir):
+        print(f"  {fp} {action:8s} {where}")
+
+
+if __name__ == "__main__":
+    import sys
+    run(open_issues="--open-issues" in sys.argv)
