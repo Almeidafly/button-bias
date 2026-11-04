@@ -64,3 +64,12 @@ def test_knob_is_known_non_button():
 def test_slider_is_known_non_button_wherever_it_is():
     for x in [0.0, 0.4, 9.9]:
         assert classify({"name": "slider", "position": (x, 0, 0)})[0] == "known_non_button"
+
+
+def test_mushy_is_known_defect_and_never_pressed():
+    cat, why = classify(demo.scene[5])
+    assert cat == "defect" and "missing feedback" in why
+    assert demo.scene[5] not in perceive(demo.scene)[0]
+
+def test_defect_only_when_feedback_is_the_only_problem():
+    assert classify(replace(GOOD, feedback=None, force_range=None))[0] == "unknown"

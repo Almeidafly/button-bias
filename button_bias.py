@@ -153,7 +153,20 @@ def classify(obj):
     reason = why_not_button(obj)
     if reason is None:
         return "button", "valid button"
+    defect = known_defect(obj)
+    if defect:
+        return "defect", defect
     for name, (rule, why) in KNOWN_NON_BUTTONS.items():
         if rule(obj):
             return "known_non_button", f"{name}: {why}"
     return "unknown", reason
+
+
+def known_defect(obj):
+    """A button that is complete except for feedback: a known defect. Never pressed
+    (without click/travel feedback the robot cannot tell a press happened), never unknown."""
+    if isinstance(obj, Button) and obj.feedback not in FEEDBACK:
+        from dataclasses import replace
+        if is_button(replace(obj, feedback="click")):
+            return "button missing feedback: known defect, not pressed (cannot confirm a press without click/travel)"
+    return None
