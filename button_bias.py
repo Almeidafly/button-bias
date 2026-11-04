@@ -170,3 +170,28 @@ def known_defect(obj):
         if is_button(replace(obj, feedback="click")):
             return "button missing feedback: known defect, not pressed (cannot confirm a press without click/travel)"
     return None
+
+
+# ---- dark press diagnosis from (simulated) sensor readings ----
+KNOWN_FAILURES = {
+    "force out of range": "pushed harder or softer than the button's force range",
+    "stuck / no travel": "button did not move far enough to register",
+    "travel but no result": "button moved, but nothing changed",
+    "wrong result": "something changed, but not what the button promises",
+}
+
+
+def diagnose(button, move, readings, before, after):
+    """Name the likely cause of a dark press. readings = {'travel': m, 'force': N}.
+    Returns one of KNOWN_FAILURES keys, or 'unexplained' if readings are missing."""
+    if not readings or "travel" not in readings or "force" not in readings:
+        return "unexplained"
+    lo, hi = button.force_range
+    if not (lo <= readings["force"] <= hi):
+        return "force out of range"
+    if readings["travel"] < button.depth_range[0]:
+        return "stuck / no travel"
+    changed = {k for k in set(before) | set(after) if before.get(k) != after.get(k) and k != "presses"}
+    if not changed:
+        return "travel but no result"
+    return "wrong result"

@@ -14,17 +14,21 @@ scene = [
     {"name": "slider", "position": (0.4, 0, 0)},
 ]
 effects = {"power": "on", "menu": "menu", "stuck": None}  # stuck does nothing
+jammed = {"stuck"}  # simulated: these buttons do not move when pushed
 
 def actuate(world, b, m):
+    """Simulated press. Returns sensor readings (travel in m, force in N)."""
     world["presses"] = world.get("presses", 0) + 1
-    if effects.get(b.name):
+    travel = 0.0 if b.name in jammed else m.depth
+    if travel >= b.depth_range[0] and effects.get(b.name):
         world["screen"] = effects[b.name]
+    return {"travel": travel, "force": m.force}
 
 SCENE = "demo-panel-v1"
 
 
 def run(open_issues=False, client=None, out_dir="unknowns", scene=scene):
-    from button_bias import classify
+    from button_bias import classify, diagnose, KNOWN_FAILURES
     from unknowns import report_ignored, report_dark, file_reports
     reports = []
     buttons, ignored = perceive(scene)
@@ -40,14 +44,18 @@ def run(open_issues=False, client=None, out_dir="unknowns", scene=scene):
     world = {"screen": "off"}
     for score, b, m in choose(buttons, cands):
         before = dict(world)
-        after = {}
+        after, readings = {}, {}
         def act(w, b_, m_):
-            actuate(w, b_, m_); after.update(w)
+            readings.update(actuate(w, b_, m_) or {}); after.update(w)
         r = press(world, b, m, act)
+        note = ""
         if r == "dark":
-            reports.append(report_dark(b, before, after, SCENE))
-        print(f"PRESS {b.name:6s} score={score:.2f} -> {r.upper()}  world={world}")
-    print("UNKNOWNS:")
+            cause = diagnose(b, m, readings, before, after)
+            note = f"  cause: {cause} (known failure, rolled back)" if cause in KNOWN_FAILURES else f"  cause: {cause}"
+            if cause not in KNOWN_FAILURES:
+                reports.append(report_dark(b, before, after, SCENE))
+        print(f"PRESS {b.name:6s} score={score:.2f} -> {r.upper()}  world={world}{note}")
+    print(f"UNKNOWNS: {len(reports)}")
     for fp, action, where in file_reports(reports, open_issues, client, out_dir):
         print(f"  {fp} {action:8s} {where}")
 

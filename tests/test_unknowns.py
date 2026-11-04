@@ -5,7 +5,7 @@ import demo, unknowns
 from button_bias import Button
 
 # A scene with things the robot still does not know.
-MYSTERY = demo.scene[:3] + ["thing-1", {"name": "blob"}, Button("half", (0, 0, 0), (0.01, 0.01), (0, 0, -1), None, (1, 2), "click", lambda a, b: True)]
+MYSTERY = demo.scene[:2] + ["thing-1", {"name": "blob"}, Button("half", (0, 0, 0), (0.01, 0.01), (0, 0, -1), None, (1, 2), "click", lambda a, b: True)]
 from unknowns import file_reports, report_ignored, REPO
 
 
@@ -26,16 +26,16 @@ def test_dry_run_default_writes_files_no_issues(tmp_path, monkeypatch):
     fake = FakeGh()
     demo.run(out_dir=str(tmp_path), client=fake, scene=MYSTERY)
     assert fake.issues == []
-    assert len(list(tmp_path.glob("*.md"))) == 4 and len(list(tmp_path.glob("bb-*.json"))) == 4
+    assert len(list(tmp_path.glob("*.md"))) == 3 and len(list(tmp_path.glob("bb-*.json"))) == 3
 
 
 def test_open_issues_and_dedupe(tmp_path):
     fake = FakeGh()
     demo.run(open_issues=True, client=fake, out_dir=str(tmp_path), scene=MYSTERY)
-    assert len(fake.issues) == 4
+    assert len(fake.issues) == 3
     assert all("bb-" in i["body"] for i in fake.issues)
     demo.run(open_issues=True, client=fake, out_dir=str(tmp_path), scene=MYSTERY)
-    assert len(fake.issues) == 4
+    assert len(fake.issues) == 3
 
 
 def test_duplicate_reports_in_one_batch(tmp_path):
@@ -78,4 +78,4 @@ def test_dedupe_survives_list_lag(tmp_path):
     fake = LaggyGh()
     demo.run(open_issues=True, client=fake, out_dir=str(tmp_path), scene=MYSTERY)
     demo.run(open_issues=True, client=fake, out_dir=str(tmp_path), scene=MYSTERY)
-    assert len(fake.issues) == 4
+    assert len(fake.issues) == 3

@@ -73,3 +73,22 @@ def test_mushy_is_known_defect_and_never_pressed():
 
 def test_defect_only_when_feedback_is_the_only_problem():
     assert classify(replace(GOOD, feedback=None, force_range=None))[0] == "unknown"
+
+
+from button_bias import diagnose, Move as _M
+
+def _d(readings, before={"screen": "a"}, after={"screen": "a"}):
+    return diagnose(GOOD, _M(GOOD.position, demo.DOWN, 0.002, 3.0), readings, before, after)
+
+def test_diagnosis_causes():
+    assert _d({"travel": 0.0, "force": 3.0}) == "stuck / no travel"
+    assert _d({"travel": 0.002, "force": 50.0}) == "force out of range"
+    assert _d({"travel": 0.002, "force": 3.0}) == "travel but no result"
+    assert _d({"travel": 0.002, "force": 3.0}, after={"screen": "b"}) == "wrong result"
+    assert _d({}) == "unexplained"
+
+def test_demo_has_zero_unknowns(tmp_path, capsys):
+    fake = type("F", (), {"repo": "Almeidafly/button-bias"})()
+    demo.run(out_dir=str(tmp_path), client=fake)
+    out = capsys.readouterr().out
+    assert "UNKNOWNS: 0" in out and "stuck / no travel" in out and "[unknown]" not in out
