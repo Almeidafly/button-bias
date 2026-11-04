@@ -109,3 +109,39 @@ def choose(buttons, candidates):
         if best[0] > 0:
             out.append((best[0], b, best[1]))
     return out
+
+
+# ---- v0.3.0: things the robot now KNOWS are not buttons (ignored silently, never "unknown") ----
+
+def _kind(obj):
+    """Best-effort kind name for an object: .kind / ['kind'] / ['name'] / the string itself."""
+    if isinstance(obj, str):
+        return obj.strip().lower()
+    if isinstance(obj, dict):
+        return str(obj.get("kind") or obj.get("name") or "").strip().lower()
+    return str(getattr(obj, "kind", "") or "").strip().lower()
+
+
+def _is_flat_label(obj):
+    # Has a place and a size, but nothing that moves: no axis, depth, force, feedback or result.
+    return (isinstance(obj, Button) and _vec(obj.position, 3) and _vec(obj.size, 2)
+            and all(getattr(obj, f) is None for f in
+                    ("press_axis", "depth_range", "force_range", "feedback", "expected")))
+
+
+# name -> (match rule, reason)
+KNOWN_NON_BUTTONS = {
+    "flat_label": (_is_flat_label, "flat printed label: has position and size but no press axis, travel, force, feedback or result"),
+}
+
+
+def classify(obj):
+    """Return (category, reason). category is one of:
+    'button', 'known_non_button', 'defect', 'unknown'."""
+    reason = why_not_button(obj)
+    if reason is None:
+        return "button", "valid button"
+    for name, (rule, why) in KNOWN_NON_BUTTONS.items():
+        if rule(obj):
+            return "known_non_button", f"{name}: {why}"
+    return "unknown", reason

@@ -45,3 +45,12 @@ def test_dark_press_rolls_back():
     w = {"screen": "off"}
     assert press(w, stuck, Move(stuck.position, demo.DOWN, 0.002, 3.0), demo.actuate) == "dark"
     assert w == {"screen": "off"}
+
+
+from button_bias import classify
+
+def test_flat_label_is_known_non_button():
+    assert classify(demo.scene[3])[0] == "known_non_button"
+
+def test_real_buttons_classified_button():
+    assert all(classify(b)[0] == "button" for b in demo.scene[:3])

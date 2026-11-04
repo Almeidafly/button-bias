@@ -23,14 +23,19 @@ def actuate(world, b, m):
 SCENE = "demo-panel-v1"
 
 
-def run(open_issues=False, client=None, out_dir="unknowns"):
-    from button_bias import why_not_button
+def run(open_issues=False, client=None, out_dir="unknowns", scene=scene):
+    from button_bias import classify
     from unknowns import report_ignored, report_dark, file_reports
-    reports = [report_ignored(o, SCENE) for o in scene if why_not_button(o)]
+    reports = []
     buttons, ignored = perceive(scene)
     print("IGNORED:")
-    for n, why in ignored:
-        print(f"  - {n}: {why}")
+    for o in scene:
+        cat, why = classify(o)
+        if cat == "button":
+            continue
+        print(f"  - [{cat}] {getattr(o, 'name', repr(o))}: {why}")
+        if cat == "unknown":
+            reports.append(report_ignored(o, SCENE))
     cands = [Move(b.position, DOWN, 0.002, 3.0) for b in buttons] + [Move((0.2, 0, 0), DOWN, 0.002, 3.0)]
     world = {"screen": "off"}
     for score, b, m in choose(buttons, cands):

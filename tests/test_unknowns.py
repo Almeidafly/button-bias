@@ -2,6 +2,10 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import pytest
 import demo, unknowns
+from button_bias import Button
+
+# A scene with things the robot still does not know.
+MYSTERY = demo.scene[:3] + ["thing-1", {"name": "blob"}, Button("half", (0, 0, 0), (0.01, 0.01), (0, 0, -1), None, (1, 2), "click", lambda a, b: True)]
 from unknowns import file_reports, report_ignored, REPO
 
 
@@ -20,18 +24,18 @@ class FakeGh:
 def test_dry_run_default_writes_files_no_issues(tmp_path, monkeypatch):
     monkeypatch.setattr(unknowns, "GhClient", lambda *a: pytest.fail("no client in dry-run"))
     fake = FakeGh()
-    demo.run(out_dir=str(tmp_path), client=fake)
+    demo.run(out_dir=str(tmp_path), client=fake, scene=MYSTERY)
     assert fake.issues == []
-    assert len(list(tmp_path.glob("*.md"))) == 5 and len(list(tmp_path.glob("*.json"))) == 5
+    assert len(list(tmp_path.glob("*.md"))) == 4 and len(list(tmp_path.glob("bb-*.json"))) == 4
 
 
 def test_open_issues_and_dedupe(tmp_path):
     fake = FakeGh()
-    demo.run(open_issues=True, client=fake, out_dir=str(tmp_path))
-    assert len(fake.issues) == 5
+    demo.run(open_issues=True, client=fake, out_dir=str(tmp_path), scene=MYSTERY)
+    assert len(fake.issues) == 4
     assert all("bb-" in i["body"] for i in fake.issues)
-    demo.run(open_issues=True, client=fake, out_dir=str(tmp_path))
-    assert len(fake.issues) == 5
+    demo.run(open_issues=True, client=fake, out_dir=str(tmp_path), scene=MYSTERY)
+    assert len(fake.issues) == 4
 
 
 def test_duplicate_reports_in_one_batch(tmp_path):
@@ -72,6 +76,6 @@ class LaggyGh(FakeGh):
 
 def test_dedupe_survives_list_lag(tmp_path):
     fake = LaggyGh()
-    demo.run(open_issues=True, client=fake, out_dir=str(tmp_path))
-    demo.run(open_issues=True, client=fake, out_dir=str(tmp_path))
-    assert len(fake.issues) == 5
+    demo.run(open_issues=True, client=fake, out_dir=str(tmp_path), scene=MYSTERY)
+    demo.run(open_issues=True, client=fake, out_dir=str(tmp_path), scene=MYSTERY)
+    assert len(fake.issues) == 4
