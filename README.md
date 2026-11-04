@@ -29,6 +29,18 @@ Everything the robot ignores, and every **dark** press it can't explain, becomes
 - **No duplicates.** Each report has a stable fingerprint (same thing, same scene = same fingerprint, whatever the time). Before opening, it checks open `unknown` issues for that fingerprint in the body. It also keeps a local note (`unknowns/opened.json`) of what it already opened, because GitHub's issue list can lag a few seconds behind.
 - A **lit** press is known, so it never makes a report.
 
+## What it learned (v0.3.0)
+The robot now sorts every object into one of four groups:
+- **button** – a real button. It may press it.
+- **known non-button** – something it has learned is not a button: a flat label (no press axis, no travel), a knob (turns, doesn't press), a slider (slides, wherever it sits). Ignored quietly, never reported.
+- **defect** – a button that is complete except it gives no click or travel. Known problem. It is **not pressed**, because without feedback the robot can't tell a press happened.
+- **unknown** – anything else. Only these become reports/issues.
+
+A **dark** press is now diagnosed from (simulated) sensor readings of travel and force:
+`stuck / no travel`, `force out of range`, `travel but no result`, or `wrong result`. These are known failures: rolled back and logged, not reported. Only a dark press with missing readings (`unexplained`) becomes an unknown.
+
+The demo now prints `UNKNOWNS: 0`.
+
 ## Run
 ```
 pip install numpy pytest
@@ -42,6 +54,8 @@ pytest -q
 - Rollback restores our state; a real press cannot be undone.
 - Dedupe uses the issue list plus a local note. On a fresh machine with no note, an issue opened seconds earlier may be missed and duplicated (this happened once: #6 duplicates #5).
 - Closed issues are not counted, so a closed unknown that shows up again gets a new issue.
+- Knob and slider are recognised by their kind/name, not by shape. A knob called something else is still unknown.
+- Sensor readings are made up by the demo; real travel/force sensing is not here.
 - Candidate moves are hand-made, not planned. Thresholds (5 mm lateral) are guesses.
 
 Related: [limb-trees](https://github.com/Almeidafly/limb-trees).
